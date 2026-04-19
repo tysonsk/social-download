@@ -24,9 +24,10 @@ if (!fs.existsSync(DOWNLOAD_DIR)) {
     fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
 }
 
-// Helper: run yt-dlp command
+// Helper: run yt-dlp command (using local binary)
 async function runYtDlp(url, outputPath, extraOpts = []) {
-    const ytDlpPath = 'yt-dlp';
+    // Use the local yt-dlp binary if it exists, otherwise fall back to system
+    const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
     const outputTemplate = path.join(outputPath, '%(uploader)s - %(title)s.%(ext)s');
     const args = [
         url,
@@ -40,9 +41,8 @@ async function runYtDlp(url, outputPath, extraOpts = []) {
     return { stdout, stderr };
 }
 
-// Helper: get video info without downloading
 async function getYtDlpInfo(url) {
-    const ytDlpPath = 'yt-dlp';
+    const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
     const cmd = `${ytDlpPath} --dump-json "${url}"`;
     const { stdout } = await execPromise(cmd);
     return JSON.parse(stdout);
