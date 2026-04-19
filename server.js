@@ -25,11 +25,35 @@ if (!fs.existsSync(DOWNLOAD_DIR)) {
 }
 
 // Helper: run yt-dlp command (using local binary)
+async function getYtDlpInfo(url) {
+    const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
+    const args = [
+        '--dump-json',
+        '--extractor-retries', '5',
+        '--retries', '5',
+        '--sleep-requests', '2',
+        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        url
+    ];
+    
+    // Safely build command with proper escaping
+    const cmd = args.reduce((acc, arg) => {
+        if (arg.includes(' ') || arg.includes('(') || arg.includes(')')) {
+            return acc + ` "${arg.replace(/"/g, '\\"')}"`;
+        }
+        return acc + ' ' + arg;
+    }, ytDlpPath);
+    
+    console.log(`Executing: ${cmd}`);
+    const { stdout } = await execPromise(cmd);
+    return JSON.parse(stdout);
+}
+
 async function runYtDlp(url, outputPath, extraOpts = []) {
-    // Use the local yt-dlp binary if it exists, otherwise fall back to system
     const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
     const outputTemplate = path.join(outputPath, '%(uploader)s - %(title)s.%(ext)s');
-        const args = [
+    
+    const args = [
         url,
         '-o', outputTemplate,
         '--no-playlist',
@@ -41,25 +65,19 @@ async function runYtDlp(url, outputPath, extraOpts = []) {
         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         ...extraOpts
     ];
-    const cmd = `${ytDlpPath} ${args.map(a => `"${a}"`).join(' ')}`;
+    
+    // Safely build command with proper escaping
+    const cmd = args.reduce((acc, arg) => {
+        const argStr = String(arg);
+        if (argStr.includes(' ') || argStr.includes('(') || argStr.includes(')') || argStr.includes('&')) {
+            return acc + ` "${argStr.replace(/"/g, '\\"')}"`;
+        }
+        return acc + ' ' + argStr;
+    }, ytDlpPath);
+    
     console.log(`Executing: ${cmd}`);
     const { stdout, stderr } = await execPromise(cmd);
     return { stdout, stderr };
-}
-
-async function getYtDlpInfo(url) {
-    const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
-    const args = [
-        '--dump-json',
-        '--extractor-retries', '5',
-        '--retries', '5',
-        '--sleep-requests', '2',
-        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        `"${url}"`
-    ];
-    const cmd = `${ytDlpPath} ${args.join(' ')}`;
-    const { stdout } = await execPromise(cmd);
-    return JSON.parse(stdout);
 }
 
 class UniversalDownloader {
