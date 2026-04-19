@@ -49,7 +49,15 @@ async function runYtDlp(url, outputPath, extraOpts = []) {
 
 async function getYtDlpInfo(url) {
     const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
-    const cmd = `${ytDlpPath} --dump-json "${url}"`;
+    const args = [
+        '--dump-json',
+        '--extractor-retries', '5',
+        '--retries', '5',
+        '--sleep-requests', '2',
+        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        `"${url}"`
+    ];
+    const cmd = `${ytDlpPath} ${args.join(' ')}`;
     const { stdout } = await execPromise(cmd);
     return JSON.parse(stdout);
 }
