@@ -29,10 +29,16 @@ async function runYtDlp(url, outputPath, extraOpts = []) {
     // Use the local yt-dlp binary if it exists, otherwise fall back to system
     const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
     const outputTemplate = path.join(outputPath, '%(uploader)s - %(title)s.%(ext)s');
-    const args = [
+        const args = [
         url,
         '-o', outputTemplate,
         '--no-playlist',
+        '--extractor-retries', '5',
+        '--retries', '5',
+        '--sleep-requests', '2',
+        '--sleep-interval', '3',
+        '--max-sleep-interval', '5',
+        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         ...extraOpts
     ];
     const cmd = `${ytDlpPath} ${args.map(a => `"${a}"`).join(' ')}`;
